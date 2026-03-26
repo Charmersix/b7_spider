@@ -1,0 +1,20 @@
+POST /api/vote/get_users HTTP/2
+Host: mng.jjt.org.cn
+Content-Length: 47
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36
+Sec-Ch-Ua-Platform: "Windows"
+Accept-Language: zh-CN,zh;q=0.9
+Sec-Ch-Ua: "Chromium";v="135", "Not-A.Brand";v="8"
+Content-Type: application/json
+Token: 
+Sec-Ch-Ua-Mobile: ?0
+Accept: */*
+Origin: http://h5.jjt.org.cn
+Sec-Fetch-Site: cross-site
+Sec-Fetch-Mode: cors
+Sec-Fetch-Dest: empty
+Referer: http://h5.jjt.org.cn/
+Accept-Encoding: gzip, deflate, br
+Priority: u=4, i
+
+{"id":"27","keyword":"","page":1,"limit":10000}
