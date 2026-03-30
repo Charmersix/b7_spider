@@ -1,0 +1,821 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JJT Images Browser</title>
+  <style>
+    :root {
+      --bg: #f3eee5;
+      --bg-accent: #e4d6c3;
+      --panel: rgba(255, 252, 247, 0.88);
+      --panel-strong: #fffaf2;
+      --text: #261d16;
+      --muted: #75695c;
+      --line: rgba(76, 58, 40, 0.14);
+      --brand: #a24a2d;
+      --brand-soft: rgba(162, 74, 45, 0.1);
+      --shadow: 0 20px 50px rgba(56, 37, 23, 0.12);
+      --radius: 22px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: "Noto Sans SC", "Source Han Sans SC", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(162, 74, 45, 0.16), transparent 28%),
+        radial-gradient(circle at top right, rgba(115, 92, 53, 0.14), transparent 22%),
+        linear-gradient(180deg, var(--bg), #f8f4ee 45%, #efe6da 100%);
+    }
+
+    body.viewer-open {
+      overflow: hidden;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 340px minmax(0, 1fr);
+      gap: 24px;
+      padding: 24px;
+    }
+
+    .sidebar,
+    .content,
+    .viewer {
+      backdrop-filter: blur(18px);
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 24px;
+      height: calc(100vh - 48px);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .content {
+      min-height: calc(100vh - 48px);
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 250, 242, 0.72);
+      box-shadow: var(--shadow);
+    }
+
+    .eyebrow {
+      margin: 0;
+      color: var(--brand);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    .title {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .title h1 {
+      font-family: "Source Han Serif SC", "Songti SC", serif;
+      font-size: clamp(28px, 3vw, 40px);
+      line-height: 1.05;
+    }
+
+    .title p {
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .stat {
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--panel-strong);
+    }
+
+    .stat strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 26px;
+    }
+
+    .controls {
+      display: grid;
+      gap: 12px;
+    }
+
+    .input,
+    .select {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid rgba(76, 58, 40, 0.18);
+      border-radius: 16px;
+      color: var(--text);
+      background: rgba(255, 252, 247, 0.92);
+      outline: none;
+    }
+
+    .input:focus,
+    .select:focus {
+      border-color: rgba(162, 74, 45, 0.45);
+      box-shadow: 0 0 0 4px var(--brand-soft);
+    }
+
+    .album-list {
+      display: grid;
+      gap: 12px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .album-card {
+      display: grid;
+      grid-template-columns: 64px minmax(0, 1fr);
+      gap: 12px;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid transparent;
+      border-radius: 18px;
+      background: rgba(255, 252, 247, 0.7);
+      cursor: pointer;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .album-card:hover {
+      transform: translateY(-1px);
+      border-color: rgba(162, 74, 45, 0.2);
+    }
+
+    .album-card.active {
+      border-color: rgba(162, 74, 45, 0.32);
+      background: rgba(162, 74, 45, 0.1);
+    }
+
+    .album-card img,
+    .thumb img,
+    .viewer img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .album-preview,
+    .thumb {
+      overflow: hidden;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #e9dbc7, #d9c0a4);
+    }
+
+    .album-preview {
+      width: 64px;
+      height: 64px;
+    }
+
+    .unsupported {
+      display: grid;
+      place-items: center;
+      width: 100%;
+      height: 100%;
+      padding: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    .album-meta {
+      min-width: 0;
+    }
+
+    .album-meta h3 {
+      font-size: 15px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .album-meta p {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .content-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .content-head h2 {
+      font-family: "Source Han Serif SC", "Songti SC", serif;
+      font-size: clamp(26px, 2vw, 36px);
+    }
+
+    .content-head p,
+    .empty p,
+    .viewer-meta p {
+      color: var(--muted);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 16px;
+    }
+
+    .tile {
+      display: grid;
+      gap: 10px;
+    }
+
+    .thumb {
+      aspect-ratio: 4 / 5;
+      border: 1px solid var(--line);
+      cursor: pointer;
+      box-shadow: 0 10px 24px rgba(56, 37, 23, 0.08);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .thumb:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 32px rgba(56, 37, 23, 0.12);
+    }
+
+    .tile small {
+      color: var(--muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .empty,
+    .loading {
+      display: grid;
+      place-items: center;
+      min-height: 60vh;
+      text-align: center;
+      padding: 32px;
+    }
+
+    .loading::after {
+      content: "";
+      width: 36px;
+      height: 36px;
+      margin-top: 18px;
+      border: 4px solid rgba(162, 74, 45, 0.14);
+      border-top-color: var(--brand);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    .viewer {
+      position: fixed;
+      inset: 0;
+      display: none;
+      grid-template-columns: minmax(0, 1fr);
+      align-items: center;
+      padding: 28px;
+      background: rgba(25, 18, 12, 0.74);
+    }
+
+    .viewer.open {
+      display: grid;
+    }
+
+    .viewer-shell {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 300px;
+      gap: 18px;
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .viewer-stage,
+    .viewer-panel {
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(22, 16, 11, 0.76);
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.32);
+    }
+
+    .viewer-stage {
+      display: grid;
+      place-items: center;
+      min-height: 72vh;
+      overflow: hidden;
+    }
+
+    .viewer-stage img {
+      object-fit: contain;
+      max-width: 100%;
+      max-height: 72vh;
+    }
+
+    .viewer-panel {
+      display: grid;
+      gap: 16px;
+      align-content: start;
+      padding: 22px;
+      color: #f6eee4;
+    }
+
+    .viewer-panel .eyebrow,
+    .viewer-panel p {
+      color: rgba(246, 238, 228, 0.7);
+    }
+
+    .viewer-meta {
+      display: grid;
+      gap: 8px;
+    }
+
+    .viewer-actions {
+      display: grid;
+      gap: 10px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 16px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 14px;
+      color: inherit;
+      text-decoration: none;
+      background: rgba(255, 255, 255, 0.06);
+      cursor: pointer;
+    }
+
+    .btn.primary {
+      border-color: rgba(244, 178, 145, 0.34);
+      background: rgba(162, 74, 45, 0.26);
+    }
+
+    .nav-btn,
+    .close-btn {
+      position: absolute;
+      top: 16px;
+      display: grid;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      border: 0;
+      border-radius: 999px;
+      color: #fff;
+      background: rgba(255, 255, 255, 0.12);
+      cursor: pointer;
+    }
+
+    .close-btn {
+      right: 16px;
+    }
+
+    .nav-btn.prev {
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .nav-btn.next {
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @media (max-width: 980px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+        height: auto;
+      }
+
+      .viewer-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .viewer-stage {
+        min-height: 52vh;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .app {
+        gap: 18px;
+        padding: 16px;
+      }
+
+      .sidebar,
+      .content {
+        padding: 18px;
+      }
+
+      .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .content-head {
+        align-items: start;
+        flex-direction: column;
+      }
+
+      .viewer {
+        padding: 14px;
+      }
+
+      .viewer-panel {
+        padding: 18px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="title">
+        <p class="eyebrow">Local Browser</p>
+        <h1>JJT Images</h1>
+        <p>浏览 `jjt_images` 里的分组图片，支持搜索、排序和大图预览。（你看硬了吗?）</p>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <span>分组数</span>
+          <strong id="albumCount">0</strong>
+        </div>
+        <div class="stat">
+          <span>图片数</span>
+          <strong id="imageCount">0</strong>
+        </div>
+      </div>
+
+      <div class="controls">
+        <input id="searchInput" class="input" type="search" placeholder="搜索分组名称" />
+        <select id="sortSelect" class="select">
+          <option value="count-desc">按图片数量</option>
+          <option value="name-asc">按名称 A-Z</option>
+          <option value="name-desc">按名称 Z-A</option>
+        </select>
+      </div>
+
+      <div id="albumList" class="album-list"></div>
+    </aside>
+
+    <main class="content">
+      <div id="mainPanel" class="loading">
+        <div>
+          <h2>正在读取图片目录</h2>
+          <p>首次加载会扫描 `jjt_images` 下的所有子目录。</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="viewer" class="viewer" aria-hidden="true">
+    <div class="viewer-shell">
+      <button class="close-btn" type="button" id="closeViewer" aria-label="关闭">✕</button>
+      <button class="nav-btn prev" type="button" id="prevBtn" aria-label="上一张">‹</button>
+      <button class="nav-btn next" type="button" id="nextBtn" aria-label="下一张">›</button>
+
+      <div class="viewer-stage">
+        <img id="viewerImage" alt="" />
+      </div>
+
+      <aside class="viewer-panel">
+        <p class="eyebrow">Image Viewer</p>
+        <div class="viewer-meta">
+          <h2 id="viewerTitle"></h2>
+          <p id="viewerAlbum"></p>
+          <p id="viewerIndex"></p>
+        </div>
+        <div class="viewer-actions">
+          <a id="openOriginal" class="btn primary" href="#" target="_blank" rel="noreferrer">打开原图</a>
+          <button id="copyPath" class="btn" type="button">复制相对路径</button>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    const state = {
+      albums: [],
+      filteredAlbums: [],
+      selectedAlbum: null,
+      search: "",
+      sort: "count-desc",
+      viewerIndex: 0,
+    };
+
+    const previewableExts = new Set(["jpg", "jpeg", "png", "gif", "bmp", "webp"]);
+
+    const albumCountEl = document.getElementById("albumCount");
+    const imageCountEl = document.getElementById("imageCount");
+    const albumListEl = document.getElementById("albumList");
+    const mainPanelEl = document.getElementById("mainPanel");
+    const searchInputEl = document.getElementById("searchInput");
+    const sortSelectEl = document.getElementById("sortSelect");
+
+    const viewerEl = document.getElementById("viewer");
+    const viewerImageEl = document.getElementById("viewerImage");
+    const viewerTitleEl = document.getElementById("viewerTitle");
+    const viewerAlbumEl = document.getElementById("viewerAlbum");
+    const viewerIndexEl = document.getElementById("viewerIndex");
+    const openOriginalEl = document.getElementById("openOriginal");
+    const copyPathEl = document.getElementById("copyPath");
+
+    function mediaUrl(path) {
+      return `/media?${new URLSearchParams({ path }).toString()}`;
+    }
+
+    function formatCount(count) {
+      return new Intl.NumberFormat("zh-CN").format(count);
+    }
+
+    function sortAlbums(albums) {
+      const items = [...albums];
+      if (state.sort === "name-asc") {
+        items.sort((a, b) => a.name.localeCompare(b.name, "zh-CN"));
+      } else if (state.sort === "name-desc") {
+        items.sort((a, b) => b.name.localeCompare(a.name, "zh-CN"));
+      } else {
+        items.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, "zh-CN"));
+      }
+      return items;
+    }
+
+    function filterAlbums() {
+      const search = state.search.trim().toLowerCase();
+      const filtered = state.albums.filter((album) => {
+        return !search || album.name.toLowerCase().includes(search);
+      });
+
+      state.filteredAlbums = sortAlbums(filtered);
+      if (!state.selectedAlbum || !state.filteredAlbums.some((item) => item.path === state.selectedAlbum.path)) {
+        state.selectedAlbum = state.filteredAlbums[0] || null;
+      }
+    }
+
+    function renderAlbumList() {
+      albumListEl.innerHTML = "";
+
+      if (!state.filteredAlbums.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.innerHTML = "<div><h3>没有匹配的分组</h3><p>换个关键词试试。</p></div>";
+        albumListEl.appendChild(empty);
+        return;
+      }
+
+      for (const album of state.filteredAlbums) {
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = "album-card";
+        if (state.selectedAlbum && album.path === state.selectedAlbum.path) {
+          card.classList.add("active");
+        }
+
+        const preview = previewableExts.has(album.images[0].ext)
+          ? `<img src="${mediaUrl(album.preview)}" alt="${escapeHtml(album.name)}" loading="lazy" />`
+          : `<div class="unsupported">${album.images[0].ext.toUpperCase()}</div>`;
+
+        card.innerHTML = `
+            <div class="album-preview">${preview}</div>
+            <div class="album-meta">
+              <h3>${escapeHtml(album.name)}</h3>
+              <p>${formatCount(album.count)} 张图片</p>
+            </div>
+          `;
+        card.addEventListener("click", () => {
+          state.selectedAlbum = album;
+          render();
+        });
+        albumListEl.appendChild(card);
+      }
+    }
+
+    function renderMain() {
+      const album = state.selectedAlbum;
+      if (!album) {
+        mainPanelEl.className = "empty";
+        mainPanelEl.innerHTML = "<div><h2>没有可显示的内容</h2><p>请确认 `jjt_images` 里有图片文件。</p></div>";
+        return;
+      }
+
+      mainPanelEl.className = "";
+      mainPanelEl.innerHTML = `
+          <div class="content-head">
+            <div>
+              <p class="eyebrow">Album</p>
+              <h2>${escapeHtml(album.name)}</h2>
+            </div>
+            <p>${formatCount(album.count)} 张图片</p>
+          </div>
+          <div class="grid" id="imageGrid"></div>
+        `;
+
+      const grid = document.getElementById("imageGrid");
+      album.images.forEach((image, index) => {
+        const tile = document.createElement("div");
+        tile.className = "tile";
+
+        const thumb = document.createElement("button");
+        thumb.type = "button";
+        thumb.className = "thumb";
+
+        if (previewableExts.has(image.ext)) {
+          thumb.innerHTML = `<img src="${mediaUrl(image.path)}" alt="${escapeHtml(image.name)}" loading="lazy" />`;
+        } else {
+          thumb.innerHTML = `<div class="unsupported">${image.ext.toUpperCase()}<br />浏览器可能不支持预览</div>`;
+        }
+
+        thumb.addEventListener("click", () => openViewer(index));
+
+        const label = document.createElement("small");
+        label.textContent = image.name;
+
+        tile.appendChild(thumb);
+        tile.appendChild(label);
+        grid.appendChild(tile);
+      });
+    }
+
+    function renderStats() {
+      albumCountEl.textContent = formatCount(state.albums.length);
+      imageCountEl.textContent = formatCount(
+        state.albums.reduce((sum, album) => sum + album.count, 0)
+      );
+    }
+
+    function render() {
+      filterAlbums();
+      renderStats();
+      renderAlbumList();
+      renderMain();
+    }
+
+    function currentImage() {
+      if (!state.selectedAlbum) return null;
+      return state.selectedAlbum.images[state.viewerIndex] || null;
+    }
+
+    function openViewer(index) {
+      state.viewerIndex = index;
+      updateViewer();
+      viewerEl.classList.add("open");
+      viewerEl.setAttribute("aria-hidden", "false");
+      document.body.classList.add("viewer-open");
+    }
+
+    function closeViewer() {
+      viewerEl.classList.remove("open");
+      viewerEl.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("viewer-open");
+    }
+
+    function stepViewer(delta) {
+      if (!state.selectedAlbum) return;
+      const total = state.selectedAlbum.images.length;
+      state.viewerIndex = (state.viewerIndex + delta + total) % total;
+      updateViewer();
+    }
+
+    function updateViewer() {
+      const image = currentImage();
+      if (!image || !state.selectedAlbum) return;
+
+      viewerTitleEl.textContent = image.name;
+      viewerAlbumEl.textContent = state.selectedAlbum.name;
+      viewerIndexEl.textContent = `${state.viewerIndex + 1} / ${state.selectedAlbum.images.length}`;
+      openOriginalEl.href = mediaUrl(image.path);
+
+      if (previewableExts.has(image.ext)) {
+        viewerImageEl.hidden = false;
+        viewerImageEl.src = mediaUrl(image.path);
+        viewerImageEl.alt = image.name;
+      } else {
+        viewerImageEl.hidden = true;
+      }
+
+      copyPathEl.onclick = async () => {
+        try {
+          await navigator.clipboard.writeText(image.path);
+          copyPathEl.textContent = "已复制";
+          setTimeout(() => {
+            copyPathEl.textContent = "复制相对路径";
+          }, 1200);
+        } catch (error) {
+          copyPathEl.textContent = "复制失败";
+          setTimeout(() => {
+            copyPathEl.textContent = "复制相对路径";
+          }, 1200);
+        }
+      };
+    }
+
+    function escapeHtml(value) {
+      return value
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    async function loadAlbums() {
+      try {
+        const response = await fetch("/api/albums");
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        state.albums = data.albums || [];
+        render();
+      } catch (error) {
+        mainPanelEl.className = "empty";
+        mainPanelEl.innerHTML = `
+            <div>
+              <h2>加载失败</h2>
+              <p>无法读取图片目录，请确认服务已正常启动。</p>
+            </div>
+          `;
+      }
+    }
+
+    searchInputEl.addEventListener("input", (event) => {
+      state.search = event.target.value;
+      render();
+    });
+
+    sortSelectEl.addEventListener("change", (event) => {
+      state.sort = event.target.value;
+      render();
+    });
+
+    document.getElementById("closeViewer").addEventListener("click", closeViewer);
+    document.getElementById("prevBtn").addEventListener("click", () => stepViewer(-1));
+    document.getElementById("nextBtn").addEventListener("click", () => stepViewer(1));
+
+    viewerEl.addEventListener("click", (event) => {
+      if (event.target === viewerEl) {
+        closeViewer();
+      }
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (!viewerEl.classList.contains("open")) return;
+      if (event.key === "Escape") closeViewer();
+      if (event.key === "ArrowLeft") stepViewer(-1);
+      if (event.key === "ArrowRight") stepViewer(1);
+    });
+
+    loadAlbums();
+  </script>
+</body>
+
+</html>
