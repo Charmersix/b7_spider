@@ -11,3 +11,9 @@ spider.py用于爬取图片，包括照片/昵称/联系方式
 img.py用于汇总图片可以沉浸式欣赏艺术照片
 
 既然取名为b7，后续可以考虑爬取一些类似jjt的艺术图片
+
+2026.3.30
+
+根据需求更新了web服务，jjt_gallery_server.py
+
+食用方法：python3 jjt_gallery_server.py --host 0.0.0.0 --port 6969 --username admin --password passwd
