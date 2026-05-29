@@ -21,9 +21,13 @@ img.py用于汇总图片可以沉浸式欣赏艺术照片
 2026.5.29
 
 更新活动id：29
+
 更新网页端按照时间排序
+
 更新docker功能
-食用方法：docker run -d --name test-gallery -p 33971:6969 \
+
+食用方法：
+docker run -d --name test-gallery -p 33971:6969 \
   -e JJT_GALLERY_USERNAME=admin \
   -e JJT_GALLERY_PASSWORD=passwd \
   test:v1
