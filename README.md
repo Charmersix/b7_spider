@@ -27,9 +27,5 @@ img.py用于汇总图片可以沉浸式欣赏艺术照片
 更新docker功能
 
 食用方法：
-docker run -d --name test-gallery -p 33971:6969 \
-  -e JJT_GALLERY_USERNAME=admin \
-  -e JJT_GALLERY_PASSWORD=passwd \
-  test:v1
-
+docker run -d --name test-gallery -p 33971:6969 -e JJT_GALLERY_USERNAME=admin -e JJT_GALLERY_PASSWORD=ZMu8GDqXg1 test:v1
 停用：docker stop 容器名或ID
