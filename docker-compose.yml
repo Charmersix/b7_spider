@@ -1,0 +1,14 @@
+services:
+  jjt-gallery:
+    build: .
+    container_name: jjt-gallery
+    restart: unless-stopped
+    ports:
+      - "6969:6969"
+    environment:
+      JJT_GALLERY_HOST: 0.0.0.0
+      JJT_GALLERY_PORT: 6969
+      JJT_GALLERY_USERNAME: admin
+      JJT_GALLERY_PASSWORD: admin
+    volumes:
+      - ./jjt_images:/app/jjt_images:ro
