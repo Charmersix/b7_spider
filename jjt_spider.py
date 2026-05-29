@@ -99,7 +99,7 @@ def fetch_and_download(activity_id, base_folder="jjt_images"):
 
 if __name__ == "__main__":
     # 💡 包含你要求的所有 ID
-    target_ids = ["21", "27", "28"]
+    target_ids = ["21", "27", "28","29"]
     
     print("🤖 爬虫任务启动...")
     for act_id in target_ids:
