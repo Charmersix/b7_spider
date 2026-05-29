@@ -17,3 +17,7 @@ img.py用于汇总图片可以沉浸式欣赏艺术照片
 根据需求更新了web服务，jjt_gallery_server.py
 
 食用方法：python3 jjt_gallery_server.py --host 0.0.0.0 --port 6969 --username admin --password passwd
+
+2026.5.29
+
+更新活动id：29
