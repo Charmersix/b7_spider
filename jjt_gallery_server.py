@@ -3,6 +3,7 @@ import base64
 import json
 import mimetypes
 import os
+import subprocess
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -35,6 +36,29 @@ def iter_image_files(folder: Path):
             yield path
 
 
+def folder_created_at(folder: Path):
+    stat = folder.stat()
+    birthtime = getattr(stat, "st_birthtime", None)
+    if birthtime is not None:
+        return birthtime
+
+    if os.name != "nt":
+        try:
+            result = subprocess.run(
+                ["stat", "--format=%W", str(folder)],
+                capture_output=True,
+                check=True,
+                text=True,
+            )
+            unix_birthtime = int(result.stdout.strip())
+            if unix_birthtime > 0:
+                return float(unix_birthtime)
+        except (OSError, ValueError, subprocess.CalledProcessError):
+            pass
+
+    return stat.st_ctime
+
+
 def build_index():
     albums = []
     total_images = 0
@@ -54,6 +78,7 @@ def build_index():
         if not image_files:
             continue
 
+        created_at = folder_created_at(album_dir)
         image_files.sort(key=lambda item: item.name, reverse=True)
         images = []
         for image_path in image_files:
@@ -73,6 +98,7 @@ def build_index():
                 "name": album_dir.name,
                 "path": album_dir.relative_to(images_dir).as_posix(),
                 "count": len(images),
+                "createdAt": created_at,
                 "preview": images[0]["path"],
                 "images": images,
             }
